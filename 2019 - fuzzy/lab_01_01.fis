@@ -1,0 +1,32 @@
+## Температура воды в котле
+
+[System]
+Name='lab_01_01'
+Type='mamdani'
+Version=2.0
+NumInputs=1
+NumOutputs=1
+NumRules=0
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='Температура воды в котле'
+Range=[0 100]
+NumMFs=3
+MF1='Маленькая':'trapmf',[0 0 20 40]
+MF2='Средняя':'trapmf',[20 40 60 80]
+MF3='Большая':'trapmf',[60 80 100 100]
+
+[Output1]
+Name='output1'
+Range=[0 1]
+NumMFs=3
+MF1='mf1':'trimf',[-0.4 0 0.4]
+MF2='mf2':'trimf',[0.1 0.5 0.9]
+MF3='mf3':'trimf',[0.6 1 1.4]
+
+[Rules]
