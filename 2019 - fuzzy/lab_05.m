@@ -12,7 +12,7 @@ global SP;
 global dt;
 global tau;
 
-global ;
+global kp;
 global ki;
 
 global steps;
@@ -26,9 +26,9 @@ V = 100;
 SP = 0.45;
 dt = 10;
 tau = V/(z*R*T);
-steps = 500;
+steps = 400;
 
-kp = 1.5;
+kp = 3;
 ki = 1;
 
 disp('Расчет нечёткого регулирования с син. возмущениями');
