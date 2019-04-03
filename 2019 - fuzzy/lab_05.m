@@ -25,15 +25,17 @@ dt = 10;
 tau = V/(z*R*T);
 steps = 500;
 
-disp('Расчет нечёткого регулирования с синусоидальными возмущениями');
-fuzzy_controller();
-disp('Расчет нечёткого регулирования с случайными возмущениями');
-fuzzy_agress();
-disp('Расчет ПИД-регулирования с случайными возмущениями');
-pid_controller();
+disp('Расчет нечёткого регулирования с син. возмущениями');
+fuzzy_reg_sin();
+disp('Расчет нечёткого регулирования с автокорр. возмущениями');
+fuzzy_reg_autocorr();
+disp('Расчет ПИД-регулирования с син. возмущениями');
+pid_reg_sin();
+disp('Расчет ПИД-регулирования с автокорр. возмущениями');
+pid_reg_autocorr();
 
 
-function fuzzy_controller()
+function fuzzy_reg_sin()
 
   global S;
   global ksi;
@@ -47,7 +49,7 @@ function fuzzy_controller()
   global steps;
 
   t=0;
-  g2(1)=0.5;
+  gamma2(1)=0.5;
 
   P0 = 0.35;
   P(1) = P0;
@@ -58,42 +60,41 @@ function fuzzy_controller()
 
   for i=2:steps
 
-    dg2 = evalfis([P(i-1), g2(i-1)], fuzzy_control);
-    g2(i) = g2(i-1) + dg2;
+    d_gamma2 = evalfis([P(i-1), gamma2(i-1)], fuzzy_control);
+    gamma2(i) = gamma2(i-1) + d_gamma2;
 
     t = t+dt;
 
     P1(i) = 0.5*(0.05*sin(t)+1);
     P2(i) = 0.3*(0.05*sin(t+10*dt)+1);
 
-    Ps(i) = findPs(P1(i),P2(i),g2(i-1));
+    Ps(i) = calculate_pressure_stat(P1(i),P2(i),gamma2(i-1));
     ro = P(i-1)/(z*R*T);
-    a(i) = get_a(P1(i),P2(i),Ps(i),g2(i-1),tau,P0,S,ro,ksi);
+    a(i) = get_a(P1(i),P2(i),Ps(i),gamma2(i-1),tau,P0,S,ro,ksi);
     P(i) = (P(i-1)-Ps(i))*exp(-a(i)*dt)+Ps(i);
     E(i) = (P(i)-SP);
 
   end
 
   figure(1);
-  subplot(3,2,1);
-  plot(0:dt:t-dt,P,'b-'), xlabel('time'), ylabel('P');
-  title('fuzzyreg');
+  subplot(4,2,1);
+  plot(0:dt:t-dt,P,'b-'), xlabel('t,c'), ylabel('P, Мпа');
+  title('fuzzy, син. возмущения');
   axis([0 steps*dt 0.3 0.6]);
   grid on;
-  hold on
+  hold on;
   borders(t-dt,SP);
 
   figure(1);
-  subplot(3,2,2);
-  plot(0:dt:t-dt,g2,'r-'), xlabel('time'), ylabel('gamma');
+  subplot(4,2,2);
+  plot(0:dt:t-dt,gamma2,'r-'), xlabel('t,c'), ylabel('gamma 2, %');
   axis([0 steps*dt 0 1]);
-  title('fuzzyreg');
+  title('fuzzy, син. возмущения');
   grid on;
     
-
 end
 
-function fuzzy_agress()
+function fuzzy_reg_autocorr()
   
   global S;
   global ksi;
@@ -107,7 +108,7 @@ function fuzzy_agress()
   global steps;
   
   t=0;
-  g2(1)=0.5;
+  gamma2(1)=0.5;
 
   P0=0.4;
   P(1) = P0;
@@ -122,27 +123,27 @@ function fuzzy_agress()
   e1 = normrnd(mu,sigma1,[1 steps]);
   e2 = normrnd(mu,sigma2,[1 steps]);
   P1(1)=0.5;
-  P2(2)=0.3;
+  P2(1)=0.3;
 
   for i=2:steps
     
-      dg2 = evalfis([P(i-1),g2(i-1)],fuzzy_control);
-      g2(i) = g2(i-1)+dg2;
+      d_gamma2 = evalfis([P(i-1),gamma2(i-1)],fuzzy_control);
+      gamma2(i) = gamma2(i-1)+d_gamma2;
       t = t+dt;        
       P1(i) = 0.5 + 0.07*P1(i-1) + e1(i);
       P2(i) = 0.3 - 0.05*P2(i-1) + e2(i);
-      Ps(i) = findPs(P1(i),P2(i),g2(i-1));
+      Ps(i) = calculate_pressure_stat(P1(i),P2(i),gamma2(i-1));
       ro = P(i-1)/(z*R*T);
-      a(i) = get_a(P1(i),P2(i),Ps(i),g2(i-1),tau,P0,S,ro,ksi);
+      a(i) = get_a(P1(i),P2(i),Ps(i),gamma2(i-1),tau,P0,S,ro,ksi);
       P(i) = (P(i-1)-Ps(i))*exp(-a(i)*dt)+Ps(i);
       E(i) = (P(i)-SP);
       
   end
 
   figure(1);
-  subplot(3,2,3);
-  plot(0:dt:t-dt,P,'r-'), xlabel('hh'), ylabel('hh');
-  title('fuzzyreg, autoregress')
+  subplot(4,2,3);
+  plot(0:dt:t-dt,P,'r-'), xlabel('t,c'), ylabel('P, Мпа');
+  title('fuzzy, авторег. возмущения');
   axis([0 steps*dt 0.3 0.6]);
   grid on;
   hold on;
@@ -150,15 +151,15 @@ function fuzzy_agress()
   borders(t-dt,SP);
 
   figure(1);
-  subplot(3,2,4);
-  plot(0:dt:t-dt,g2), xlabel('h'), ylabel('h');
+  subplot(4,2,4);
+  plot(0:dt:t-dt,gamma2), xlabel('t,c'), ylabel('gamma 2, %');
   axis([0 steps*dt 0 1]);
-  title('fuzzyreg, autoregress');
+  title('fuzzy, авторег. возмущения');
   grid on;
 
 end
 
-function pid_controller()
+function pid_reg_sin()
   global S;
   global ksi;
   global z;
@@ -171,7 +172,7 @@ function pid_controller()
   global steps;
   
   t = 0;
-  g2(1) = 0.5;
+  gamma2(1) = 0.5;
 
   P0 = 0.4;
   P(1) = P0;
@@ -185,42 +186,114 @@ function pid_controller()
   for i=2:steps
     
     if i<=2
-      [dg2,I]= PID(E(i-1),0,kc,ki,I,dt);
+      [d_gamma2,I]= calculate_pid_control(E(i-1),0,kc,ki,I,dt);
     else
-      [dg2,I]= PID(E(i-1),E(i-2),kc,ki,I,dt);
+      [d_gamma2,I]= calculate_pid_control(E(i-1),E(i-2),kc,ki,I,dt);
     end
     
-    g2(i) = dg2;
+    gamma2(i) = d_gamma2;
     t = t+dt;
     P1(i) = 0.5*(0.05*sin(t)+1);
     P2(i) = 0.3*(0.05*sin(t+10*dt)+1);
-    Ps(i) = findPs(P1(i),P2(i),g2(i-1));
+    Ps(i) = calculate_pressure_stat(P1(i),P2(i),gamma2(i-1));
     ro = P(i-1)/(z*R*T);
-    a(i) = get_a(P1(i),P2(i),Ps(i),g2(i-1),tau,P0,S,ro,ksi);
+    a(i) = get_a(P1(i),P2(i),Ps(i),gamma2(i-1),tau,P0,S,ro,ksi);
     P(i) = (P(i-1)-Ps(i))*exp(-a(i)*dt)+Ps(i);
     E(i) = (P(i)-SP);
     
   end
 
   figure(1);
-  subplot(3,2,5);
-  plot(0:dt:t-dt,P,'r-'), xlabel('hh'), ylabel('hh'), title('hh');
+  subplot(4,2,5);
+  plot(0:dt:t-dt,P,'r-'), xlabel('t,c'), ylabel('P, Мпа');
+  title('ПИД, син. возмущения');
   axis([0 steps*dt 0.3 0.6]);
   grid on;
   hold on;
   borders(t-dt,SP);
 
   figure(1);
-  subplot(3,2,6);
-  plot(0:dt:t-dt,g2,'b-'), xlabel('hh'), ylabel('hh'), title('hh');
+  subplot(4,2,6);
+  plot(0:dt:t-dt,gamma2,'b-'), xlabel('t,c'), ylabel('gamma 2, %');
+  title('ПИД, син. возмущения');
   axis([0 steps*dt 0 1]);
   grid on;
   
 end
 
-function Ps = findPs(P1,P2,g2)
+function pid_reg_autocorr()
+  global S;
+  global ksi;
+  global z;
+  global R;
+  global T;
+  global V;
+  global SP;
+  global dt;
+  global tau;
+  global steps;
+  
+  t = 0;
+  gamma2(1) = 0.5;
 
-  p=[-1 (P1-g2^2*P2) +g2^2*P2^2];
+  P0 = 0.4;
+  P(1) = P0;
+  E(1) = P0-SP;
+  t = dt;
+
+  I = 0;
+  kc = 5;
+  ki = 1;
+
+  sigma1 = 0.01;
+  sigma2 = 0.012;
+  mu = 0.01; 
+  e1 = normrnd(mu,sigma1,[1 steps]);
+  e2 = normrnd(mu,sigma2,[1 steps]);
+  P1(1)=0.5;
+  P2(1)=0.3;
+  
+  for i=2:steps
+    
+    if i<=2
+      [d_gamma2,I]= calculate_pid_control(E(i-1),0,kc,ki,I,dt);
+    else
+      [d_gamma2,I]= calculate_pid_control(E(i-1),E(i-2),kc,ki,I,dt);
+    end
+    
+    gamma2(i) = d_gamma2;
+    t = t+dt;
+    P1(i) = 0.5 + 0.07*P1(i-1) + e1(i);
+    P2(i) = 0.3 - 0.05*P2(i-1) + e2(i);
+    Ps(i) = calculate_pressure_stat(P1(i),P2(i),gamma2(i-1));
+    ro = P(i-1)/(z*R*T);
+    a(i) = get_a(P1(i),P2(i),Ps(i),gamma2(i-1),tau,P0,S,ro,ksi);
+    P(i) = (P(i-1)-Ps(i))*exp(-a(i)*dt)+Ps(i);
+    E(i) = (P(i)-SP);
+    
+  end
+
+  figure(1);
+  subplot(4,2,7);
+  plot(0:dt:t-dt,P,'r-'), xlabel('t,c'), ylabel('P, Мпа');
+  title('ПИД, автокорр. возмущения');
+  axis([0 steps*dt 0.3 0.6]);
+  grid on;
+  hold on;
+  borders(t-dt,SP);
+
+  figure(1);
+  subplot(4,2,8);
+  plot(0:dt:t-dt,gamma2,'b-'), xlabel('t,c'), ylabel('gamma 2, %');
+  title('ПИД, автокорр. возмущения');
+  axis([0 steps*dt 0 1]);
+  grid on;
+  
+end
+
+function Ps = calculate_pressure_stat(P1,P2,gamma2)
+
+  p=[-1 (P1-gamma2^2*P2) +gamma2^2*P2^2];
   c=roots(p);
   if c(1)==0||c(2)==0
       Ps=c(1);   
@@ -231,37 +304,39 @@ function Ps = findPs(P1,P2,g2)
     
 end
 
-function a = get_a(P1,P2,Ps,g2,tau,P0,S,ro,ksi)
+function a = get_a(P1,P2,Ps,gamma2,tau,P0,S,ro,ksi)
 
-  M1 = 1*S*power(2*ro*P0*(P1-P0)/ksi,0.5);
-  M2 = g2*S*power(2*ro*P2*(P0-P2)/ksi,0.5);
+  gamma1 = 1;
+
+  M1 = gamma1 * S * (2*ro*P0*(P1-P0)/ksi) ^ 0.5;
+  M2 = gamma2 * S * (2*ro*P2*(P0-P2)/ksi) ^ 0.5;
   dM = M1-M2;
   a = dM/(tau*(Ps-P0));
     
 end
 
-function [y,I] = PID(ec,em1,kc,ki,I,dt)
+function [OP,I] = calculate_pid_control(e_current,e_prev,kc,ki,I,dt)
 
-    D = (ec-em1);
+    D = (e_current-e_prev);
     kd = 0;
     
-    if ki~=0
+    if ki ~= 0
       
-        Imax = (1-(kc*ec+kd*D))/ki;
-        Imin = -(kc*ec+kd*D)/ki;
-        I = I + ec*dt;
+        Imax = (1-(kc*e_current+kd*D))/ki;
+        Imin = -(kc*e_current+kd*D)/ki;
+        I = I + e_current*dt;
         I = min(max(I,Imin), Imax);
         
     end
 
-    OP = kc*ec+ki*I+kd*D/dt;
+    OP = kc*e_current + ki*I + kd*D/dt;
     
     if OP > 1
         OP = 1;
     elseif OP < 0
         OP = 0;
     end
-    y = OP;
+
 end
 
 function borders(x,y)

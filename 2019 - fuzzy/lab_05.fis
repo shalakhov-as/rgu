@@ -1,5 +1,5 @@
 [System]
-Name='lab5'
+Name='lab_05'
 Type='mamdani'
 Version=2.0
 NumInputs=2
@@ -12,28 +12,28 @@ AggMethod='max'
 DefuzzMethod='centroid'
 
 [Input1]
-Name='Input1'
+Name='Pressure'
 Range=[0 0.9]
 NumMFs=3
-MF1='mf1':'trimf',[-0.45 0 0.45]
-MF2='mf2':'trimf',[0 0.45 0.9]
-MF3='mf3':'trimf',[0.45 0.9 1.35]
+MF1='Low':'trimf',[0 0 0.45]
+MF2='Optimal':'trimf',[0 0.45 0.9]
+MF3='High':'trimf',[0.45 0.9 0.9]
 
 [Input2]
-Name='input2'
+Name='Enter Valve'
 Range=[0 1]
 NumMFs=3
-MF1='mf1':'trimf',[-0.5 0 0.5]
-MF2='mf2':'trimf',[0 0.5 1]
-MF3='mf3':'trimf',[0.5 1 1]
+MF1='Opened':'trimf',[0 0 0.5]
+MF2='Between':'trimf',[0 0.5 1]
+MF3='Closed':'trimf',[0.5 1 1]
 
 [Output1]
-Name='output1'
+Name='Gas Exit Valve'
 Range=[-1 1]
 NumMFs=3
-MF1='mf1':'trimf',[-1 -1 0]
-MF2='mf2':'trimf',[-1 0 1]
-MF3='mf3':'trimf',[0 1 1]
+MF1='Closing':'trimf',[-1 -1 0]
+MF2='NotTouch':'trimf',[-1 0 1]
+MF3='Opening':'trimf',[0 1 1]
 
 [Rules]
 1 1, 1 (1) : 1
