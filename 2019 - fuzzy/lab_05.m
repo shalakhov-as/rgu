@@ -37,7 +37,7 @@ disp('Расчет нечёткого регулирования с автоко
 fuzzy_reg_autocorr();
 disp('Расчет ПИД-регулирования с син. возмущениями');
 pid_reg_sin();
-disp('Расчет ПИД-регулирования с автокорр. возмущениями');
+disp('Расчет ПИД-регулирования с авторег. возмущениями');
 pid_reg_autocorr();
 
 
@@ -282,7 +282,7 @@ function pid_reg_autocorr()
   figure(1);
   subplot(4,2,7);
   plot(0:dt:t-dt,P, 'LineWidth', 2), xlabel('t,c'), ylabel('P, Мпа');
-  title('ПИД, автокорр. возмущения');
+  title('ПИД, авторег. возмущения');
   axis([0 steps*dt 0.3 0.6]);
   grid on;
   hold on;
@@ -291,7 +291,7 @@ function pid_reg_autocorr()
   figure(1);
   subplot(4,2,8);
   plot(0:dt:t-dt,gamma2, 'LineWidth', 2), xlabel('t,c'), ylabel('gamma 2, %');
-  title('ПИД, автокорр. возмущения');
+  title('ПИД, авторег. возмущения');
   axis([0 steps*dt 0 1]);
   grid on;
   
@@ -299,13 +299,13 @@ end
 
 function Ps = calculate_pressure_stat(P1,P2,gamma2)
 
-  p=[-1 (P1-gamma2^2*P2) +gamma2^2*P2^2];
-  c=roots(p);
-  if c(1)==0||c(2)==0
-      Ps=c(1);   
+  p = [-1 (P1-gamma2^2*P2) +gamma2^2*P2^2];
+  c = roots(p);
+  if c(1)==0 || c(2)==0
+      Ps = c(1);   
   else
-      pos=find(c>0);
-      Ps=c(pos);
+      i = find(c>0);
+      Ps = c(i);
   end
     
 end
@@ -317,7 +317,7 @@ function a = get_a(P1,P2,Ps,gamma2,tau,P0,S,ro,ksi)
   M1 = gamma1 * S * (2*ro*P0*(P1-P0)/ksi) ^ 0.5;
   M2 = gamma2 * S * (2*ro*P2*(P0-P2)/ksi) ^ 0.5;
   dM = M1-M2;
-  a = dM/(tau*(Ps-P0));
+  a = dM / (tau*(Ps-P0));
     
 end
 
