@@ -12,6 +12,9 @@ global SP;
 global dt;
 global tau;
 
+global ;
+global ki;
+
 global steps;
 
 S = 0.3;
@@ -24,6 +27,9 @@ SP = 0.45;
 dt = 10;
 tau = V/(z*R*T);
 steps = 500;
+
+kp = 1.5;
+ki = 1;
 
 disp('Расчет нечёткого регулирования с син. возмущениями');
 fuzzy_reg_sin();
@@ -78,7 +84,7 @@ function fuzzy_reg_sin()
 
   figure(1);
   subplot(4,2,1);
-  plot(0:dt:t-dt,P,'b-'), xlabel('t,c'), ylabel('P, Мпа');
+  plot(0:dt:t-dt,P, 'LineWidth', 2), xlabel('t,c'), ylabel('P, Мпа');
   title('fuzzy, син. возмущения');
   axis([0 steps*dt 0.3 0.6]);
   grid on;
@@ -87,7 +93,7 @@ function fuzzy_reg_sin()
 
   figure(1);
   subplot(4,2,2);
-  plot(0:dt:t-dt,gamma2,'r-'), xlabel('t,c'), ylabel('gamma 2, %');
+  plot(0:dt:t-dt,gamma2, 'LineWidth', 2), xlabel('t,c'), ylabel('gamma 2, %');
   axis([0 steps*dt 0 1]);
   title('fuzzy, син. возмущения');
   grid on;
@@ -122,8 +128,8 @@ function fuzzy_reg_autocorr()
   mu = 0.01; 
   e1 = normrnd(mu,sigma1,[1 steps]);
   e2 = normrnd(mu,sigma2,[1 steps]);
-  P1(1)=0.5;
-  P2(1)=0.3;
+  P1(1) = 0.5;
+  P2(1) = 0.3;
 
   for i=2:steps
     
@@ -142,7 +148,7 @@ function fuzzy_reg_autocorr()
 
   figure(1);
   subplot(4,2,3);
-  plot(0:dt:t-dt,P,'r-'), xlabel('t,c'), ylabel('P, Мпа');
+  plot(0:dt:t-dt,P, 'LineWidth', 2), xlabel('t,c'), ylabel('P, Мпа');
   title('fuzzy, авторег. возмущения');
   axis([0 steps*dt 0.3 0.6]);
   grid on;
@@ -152,7 +158,7 @@ function fuzzy_reg_autocorr()
 
   figure(1);
   subplot(4,2,4);
-  plot(0:dt:t-dt,gamma2), xlabel('t,c'), ylabel('gamma 2, %');
+  plot(0:dt:t-dt,gamma2, 'LineWidth', 2), xlabel('t,c'), ylabel('gamma 2, %');
   axis([0 steps*dt 0 1]);
   title('fuzzy, авторег. возмущения');
   grid on;
@@ -170,6 +176,8 @@ function pid_reg_sin()
   global dt;
   global tau;
   global steps;
+  global kp;
+  global ki;
   
   t = 0;
   gamma2(1) = 0.5;
@@ -180,18 +188,16 @@ function pid_reg_sin()
   t = dt;
 
   I = 0;
-  kc = 5;
-  ki = 1;
   
   for i=2:steps
     
     if i<=2
-      [d_gamma2,I]= calculate_pid_control(E(i-1),0,kc,ki,I,dt);
+      [OP,I]= calculate_pid_control(E(i-1),0,kp,ki,I,dt);
     else
-      [d_gamma2,I]= calculate_pid_control(E(i-1),E(i-2),kc,ki,I,dt);
+      [OP,I]= calculate_pid_control(E(i-1),E(i-2),kp,ki,I,dt);
     end
     
-    gamma2(i) = d_gamma2;
+    gamma2(i) = OP;
     t = t+dt;
     P1(i) = 0.5*(0.05*sin(t)+1);
     P2(i) = 0.3*(0.05*sin(t+10*dt)+1);
@@ -205,7 +211,7 @@ function pid_reg_sin()
 
   figure(1);
   subplot(4,2,5);
-  plot(0:dt:t-dt,P,'r-'), xlabel('t,c'), ylabel('P, Мпа');
+  plot(0:dt:t-dt,P, 'LineWidth', 2), xlabel('t,c'), ylabel('P, Мпа');
   title('ПИД, син. возмущения');
   axis([0 steps*dt 0.3 0.6]);
   grid on;
@@ -214,7 +220,7 @@ function pid_reg_sin()
 
   figure(1);
   subplot(4,2,6);
-  plot(0:dt:t-dt,gamma2,'b-'), xlabel('t,c'), ylabel('gamma 2, %');
+  plot(0:dt:t-dt,gamma2, 'LineWidth', 2), xlabel('t,c'), ylabel('gamma 2, %');
   title('ПИД, син. возмущения');
   axis([0 steps*dt 0 1]);
   grid on;
@@ -232,6 +238,8 @@ function pid_reg_autocorr()
   global dt;
   global tau;
   global steps;
+  global kp;
+  global ki;
   
   t = 0;
   gamma2(1) = 0.5;
@@ -242,26 +250,24 @@ function pid_reg_autocorr()
   t = dt;
 
   I = 0;
-  kc = 5;
-  ki = 1;
 
   sigma1 = 0.01;
   sigma2 = 0.012;
   mu = 0.01; 
   e1 = normrnd(mu,sigma1,[1 steps]);
   e2 = normrnd(mu,sigma2,[1 steps]);
-  P1(1)=0.5;
-  P2(1)=0.3;
+  P1(1) = 0.5;
+  P2(1) = 0.3;
   
   for i=2:steps
     
     if i<=2
-      [d_gamma2,I]= calculate_pid_control(E(i-1),0,kc,ki,I,dt);
+      [OP,I]= calculate_pid_control(E(i-1),0,kp,ki,I,dt);
     else
-      [d_gamma2,I]= calculate_pid_control(E(i-1),E(i-2),kc,ki,I,dt);
+      [OP,I]= calculate_pid_control(E(i-1),E(i-2),kp,ki,I,dt);
     end
     
-    gamma2(i) = d_gamma2;
+    gamma2(i) = OP;
     t = t+dt;
     P1(i) = 0.5 + 0.07*P1(i-1) + e1(i);
     P2(i) = 0.3 - 0.05*P2(i-1) + e2(i);
@@ -275,7 +281,7 @@ function pid_reg_autocorr()
 
   figure(1);
   subplot(4,2,7);
-  plot(0:dt:t-dt,P,'r-'), xlabel('t,c'), ylabel('P, Мпа');
+  plot(0:dt:t-dt,P, 'LineWidth', 2), xlabel('t,c'), ylabel('P, Мпа');
   title('ПИД, автокорр. возмущения');
   axis([0 steps*dt 0.3 0.6]);
   grid on;
@@ -284,7 +290,7 @@ function pid_reg_autocorr()
 
   figure(1);
   subplot(4,2,8);
-  plot(0:dt:t-dt,gamma2,'b-'), xlabel('t,c'), ylabel('gamma 2, %');
+  plot(0:dt:t-dt,gamma2, 'LineWidth', 2), xlabel('t,c'), ylabel('gamma 2, %');
   title('ПИД, автокорр. возмущения');
   axis([0 steps*dt 0 1]);
   grid on;
@@ -315,21 +321,21 @@ function a = get_a(P1,P2,Ps,gamma2,tau,P0,S,ro,ksi)
     
 end
 
-function [OP,I] = calculate_pid_control(e_current,e_prev,kc,ki,I,dt)
+function [OP,I] = calculate_pid_control(e_current,e_prev,kp,ki,I,dt)
 
     D = (e_current-e_prev);
     kd = 0;
     
     if ki ~= 0
       
-        Imax = (1-(kc*e_current+kd*D))/ki;
-        Imin = -(kc*e_current+kd*D)/ki;
+        Imax = (1-(kp*e_current+kd*D))/ki;
+        Imin = -(kp*e_current+kd*D)/ki;
         I = I + e_current*dt;
         I = min(max(I,Imin), Imax);
         
     end
 
-    OP = kc*e_current + ki*I + kd*D/dt;
+    OP = kp*e_current + ki*I + kd*D/dt;
     
     if OP > 1
         OP = 1;
@@ -341,6 +347,6 @@ end
 
 function borders(x,y)
   figure(1);
-  plot([0 x],[0.95*y,0.95*y],'r');
-  plot([0 x],[1.05*y,1.05*y],'r');
+  plot([0 x],[0.95*y,0.95*y],'r--');
+  plot([0 x],[1.05*y,1.05*y],'r--');
 end
